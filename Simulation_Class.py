@@ -222,7 +222,8 @@ class Simulation:
          starting_temperature: float, discount_rate: float, delta_t: float,
          decay_type: str, start_decay_episode: int, end_decay_episode: int,
          disposition: float, know_fresh_agent: float, prefer_same_pool: float, prefer_different_pool: float,
-         learning_mode: str = "q_learning", policy_mode: str = "boltzmann"):
+         learning_mode: str = "q_learning", policy_mode: str = "boltzmann",
+         starting_qvalue=None, starting_state=None):
         self.population = population
         self.rounds = rounds
         self.learning_rate = learning_rate
@@ -241,6 +242,8 @@ class Simulation:
         self.policy_mode = policy_mode
         self.policy = greedy if policy_mode == "greedy" else epsilon_greedy if policy_mode == "epsilon_greedy" else boltzmann_exploration
         self.initialized = False
+        self.starting_qvalue = starting_qvalue
+        self.starting_state = starting_state
 
         if (population % 2 != 0):
             print("sdoo: population must be a multiple of two")
@@ -338,8 +341,26 @@ class Simulation:
         # qtable_ps = np.zeros((2, 2))
         # qtable_pd = np.zeros((2, 2))
         # agents = [Agent(learning_rate, temperature, discount_rate, qtable_ps=qtable_ps, qtable_pd=qtable_pd) for _ in range(population)]
-        
-        self.agents = [Agent(self.learning_rate, self.temperature, self.discount_rate, self.delta_t, "none", policy=self.policy) for _ in range(self.population)]
+        starting_action = None
+        if self.starting_state == "defect":
+            starting_action = ActionPD.DEFECT
+        elif self.starting_state == "cooperate":
+            starting_action = ActionPD.COOPERATE
+        if self.starting_qvalue is None:
+            self.agents = [
+                Agent(self.learning_rate, self.temperature, self.discount_rate, 
+                self.delta_t, "none", policy=self.policy, last_action_pd=starting_action) 
+                for _ in range(self.population)
+                ]
+        else:
+            self.agents = []
+            for _ in range(self.population):
+                qtable_ps = np.zeros((2, 2)) + self.starting_qvalue
+                qtable_pd = np.zeros((2, 2)) + self.starting_qvalue
+                self.agents.append(
+                    Agent(self.learning_rate, self.temperature, self.discount_rate, 
+                          self.delta_t, "none", policy=self.policy, last_action_pd=starting_action,
+                          qtable_ps=qtable_ps, qtable_pd=qtable_pd))
         self.unpaired = list(range(self.population))
 
         # Pair Agents
@@ -855,34 +876,35 @@ def run_simulations(base_params, episodes, reps, tests={}, save=True):
         if save:
             if not os.path.exists('reps'):
                 os.makedirs('reps')
-            with open(f'reps/reps_{stts}.pkl', 'wb') as f:
-                pickle.dump(param_results_reps, f)
+            # with open(f'reps/reps_{stts}.pkl', 'wb') as f:
+                # pickle.dump(param_results_reps, f)
             with open(f'avg_{stts}.pkl', 'wb') as f:
                 pickle.dump(param_results_avg, f)
         all_results_reps[param_name] = param_results_reps
         all_results_average[param_name] = param_results_avg
     return all_results_reps, all_results_average
 
-def main():
+def main_multi():
 
-    ##############################################################################################################
-    # Simulation Parameters
-    ##############################################################################################################
-
-    episodes = 5000
+    episodes = 6000
     reps = 5
 
     base_params = {"population": 20,   # Agent Population Size (Must be a multiple of 2)
         "rounds": 20,            # Rounds per Episode
-        "learning_rate": 0.05,   # Alpha (Learning Rate)
         "learning_mode": "q_learning", # Learning Mode (q_learning or sarsa)
+        
+        "learning_rate": 0.05,   # Alpha (Learning Rate)
+        "discount_rate": 0.95,   # Gamma (Discount Rate)
+        "starting_qvalue": 200.0,  # Starting Q-Value
+        "starting_state": None, # Starting State (cooperate, defect, or None for random)
+
         "policy_mode": "epsilon_greedy", # Policy Mode (epsilon_greedy or boltzmann)
-        "starting_temperature": 85,       # Starting Boltzmann Temperature 
-        "discount_rate": 0.992,   # Gamma (Discount Rate)
-        "delta_t": 0.99,         # Boltzmann Temperature Decay Rate
-        "decay_type": "exponential", # Decay Type (exponential or linear)
         "start_decay_episode": 0, # Episode to Start Decay
-        "end_decay_episode": None, # Episode to End Decay
+        "end_decay_episode": 0, # Episode to End Decay
+        "starting_temperature": 0.0,       # Starting Boltzmann Temperature 
+        "decay_type": "linear", # Decay Type (exponential or linear)
+        "delta_t": 0.0,         # Boltzmann Temperature Decay Rate
+        
         "disposition": 0.0,      # Disposition to Assume Cooperation
         "know_fresh_agent": 1.0, # Probability of Knowing Fresh Agent's Previous Action
         "prefer_same_pool": 0.0, # Probability of Choosing Same Pool Partner
@@ -891,7 +913,75 @@ def main():
 
     # Can be empty to run just the base parameters
     tests = { 
+        "rounds": [20, 10, 5, 2, 1],
+        "episodes": [6000, 12000, 24000, 60000, 120000],
     }
+
+    # tests = {
+    #     "delta_t": [0.97, 0.99, 0.995],
+    # }
+
+    all_results_reps, all_results_average = {}, {}
+    for i in range(len(list(tests.values())[0])):
+        params = base_params.copy()
+        values = ""
+        for key, value in tests.items():
+            if key in params.keys():
+                params[key] = value[i]
+            elif key == "episodes":
+                episodes = value[i]
+            elif key == "reps":
+                reps = value[i]
+            else:
+                raise ValueError(f"Invalid parameter: {key}")
+            values = values + f"{key}_{value[i]}_"
+        single_test = {"learning_mode": ["q_learning"]}
+        results_reps, results_average = run_simulations(params, episodes, reps, single_test, save=True)
+        all_results_reps[values] = results_reps["learning_mode"]["q_learning"]
+        all_results_average[values] = results_average["learning_mode"]["q_learning"]
+    # with open(f'reps/reps_grouped.pkl', 'wb') as f:
+    #     pickle.dump(all_results_reps, f)
+    with open(f'avg_grouped.pkl', 'wb') as f:
+        pickle.dump(all_results_average, f)
+
+def main():
+
+    ##############################################################################################################
+    # Simulation Parameters
+    ##############################################################################################################
+
+    episodes = 500000
+    reps = 1
+
+    base_params = {"population": 20,   # Agent Population Size (Must be a multiple of 2)
+        "rounds": 1,            # Rounds per Episode
+        "learning_mode": "q_learning", # Learning Mode (q_learning or sarsa)
+        
+        "learning_rate": 0.05,   # Alpha (Learning Rate)
+        "discount_rate": 0.97,   # Gamma (Discount Rate)
+        "starting_qvalue": 100.0,  # Starting Q-Value
+        "starting_state": None, # Starting State (cooperate, defect, or None for random)
+
+        "policy_mode": "epsilon_greedy", # Policy Mode (epsilon_greedy or boltzmann)
+        "start_decay_episode": 0, # Episode to Start Decay
+        "end_decay_episode": 0, # Episode to End Decay
+        "starting_temperature": 0.01,       # Starting Boltzmann Temperature 
+        "decay_type": "linear", # Decay Type (exponential or linear)
+        "delta_t": 0.0,         # Boltzmann Temperature Decay Rate
+        
+        "disposition": 0.0,      # Disposition to Assume Cooperation
+        "know_fresh_agent": 1.0, # Probability of Knowing Fresh Agent's Previous Action
+        "prefer_same_pool": 0.0, # Probability of Choosing Same Pool Partner
+        "prefer_different_pool": 0.0, # Probability of Choosing Different Pool Partner
+        }
+
+    # Can be empty to run just the base parameters
+    tests = { 
+        "starting_temperature": [0.001, 0.002],
+    }
+    # tests = {
+    #     "starting_temperature": [0.005, 0.01]
+    # }
 
     # tests = {
     #     "delta_t": [0.97, 0.99, 0.995],
@@ -901,3 +991,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # main_multi()

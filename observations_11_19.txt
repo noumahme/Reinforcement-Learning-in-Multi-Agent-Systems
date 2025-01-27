@@ -1,0 +1,208 @@
+Alpha: 0.005
+Percentage of cooperators for each gamma value:
+gamma 0.88: 0.21
+gamma 0.89: 0.21
+gamma 0.90: 0.19
+gamma 0.91: 0.40
+gamma 0.92: 0.36
+gamma 0.93: 0.45
+gamma 0.94: 0.58
+gamma 0.95: 0.92
+gamma 0.96: 0.98
+gamma 0.97: 1.0
+gamma 0.98: 1.0
+
+Alpha: 0.05
+gamma 0.88: 0.38
+gamma 0.89: 0.32
+gamma 0.90: 0.42
+gamma 0.91: 0.48
+gamma 0.92: 0.58
+gamma 0.93: 0.78
+gamma 0.94: 0.78
+gamma 0.95: 0.90
+gamma 0.96: 0.92
+gamma 0.97: 0.98
+gamma 0.98: 1.0
+
++-------+-------+-------+
+| Alpha | 0.005 | 0.05  |
++-------+-------+-------+
+| 0.88  |  0.21 |  0.38 |
+| 0.89  |  0.21 |  0.32 |
+| 0.90  |  0.19 |  0.42 |
+| 0.91  |  0.40 |  0.48 |
+| 0.92  |  0.36 |  0.58 |
+| 0.93  |  0.45 |  0.78 |
+| 0.94  |  0.58 |  0.78 |
+| 0.95  |  0.92 |  0.90 |
+| 0.96  |  0.98 |  0.92 |
+| 0.97  |  1.0  |  0.98 |
+| 0.98  |  1.0  |  1.0  |
++-------+-------+-------+
+
+hypothesis: Increasing rounds allows for increased cooperation.
+gamma 0.90, alpha 0.05, 5 reps
+20 rounds: 0.42
+10 rounds: 0.60
+5 rounds:  0.32
+2 rounds:  0.96
+1 rounds:  0.56
+TODO: raise reps - perhaps calculate deviation as well
+
+gamma 0.95, alpha 0.05, 5 reps
+20 rounds: 0.78
+10 rounds: 0.92
+5 rounds:  1.0
+2 rounds:  1.0
+1 rounds:  0.82
+
+Discovery:
+No matter the gamma, at alpha 0.05,
+when agents self-play, they reach 1.0 cooperation.
+TODO: Start in same state, but have exploration
+
+Exploration:
+How do agents who do not cooperate evolve from
+a high Q-value to a low Q-value?
+Single agents, gamma 0.7-0.99, alpha 0.05, 1 rep
+
+0.70: 0.1 #
+0.71: 0.0
+0.72: 0.0
+0.73: 0.1 #
+0.74: 0.1 #
+0.75: 0.0
+0.76: 0.1 #
+0.77: 0.1 #
+0.78: 0.0
+0.79: 0.1 #
+0.80: 0.2 ##
+0.81: 0.1 #
+0.82: 0.0
+0.83: 0.1 #
+0.84: 0.4 ####
+0.85: 0.1 #
+0.86: 0.0
+0.87: 0.1 #
+0.88: 0.3 ###
+0.89: 0.3 ###
+0.90: 0.3 ###
+0.91: 0.3 ###
+0.92: 0.5 #####
+0.93: 0.6 ######
+0.94: 0.6 ######
+0.95: 0.7 #######
+0.96: 1.0 ##########
+0.97: 1.0 ##########
+0.98: 1.0 ##########
+0.99: 1.0 ##########
+
+Observation: There is consistent gap between Q-values where partner defected state < partner cooperated state
+This gap appears to be about 4.0-5.0 consistently across gamma values. (Little smaller until the end for small gamma)
+
+Cooperation cannot occur before Q(defect|cooperated) falls below cooperation steady state
+Cooperation will not occur once Q(cooperate|defected) falls below defection steady state
+must occur before partner defects 
+
+Single agents, gamma 0.7-0.99, alpha 0.05, 1 rep, 1 ROUND PER EPISODE
+
+0.70: 0.1 #
+0.71: 0.0 
+0.72: 0.1 #
+0.73: 0.1 #
+0.74: 0.2 ##
+0.75: 0.1 #
+0.76: 0.3 ###
+0.77: 0.2 ##
+0.78: 0.1 #
+0.79: 0.3 ###
+0.80: 0.1 #
+0.81: 0.2 ##
+0.82: 0.3 ###
+0.83: 0.3 ###
+0.84: 0.0 
+0.85: 0.1 #
+0.86: 0.4 ####
+0.87: 0.1 #
+0.88: 0.6 ######
+0.89: 0.5 #####
+0.90: 0.3 ###
+0.91: 0.7 #######
+0.92: 0.73#######? (One pair of agents loops with period of 3 rounds)
+0.93: 0.6 ######
+0.94: 0.6 ######
+0.95: 0.5 #####
+0.96: 0.9 #########
+0.97: 0.9 #########
+0.98: 1.0 ##########
+0.99: 1.0 ##########
+
+Observation: The consistent gap between Q-values where partner defected state < partner cooperated state
+This gap appears to be smaller, about 1.0-2.0 across gamma values.
+
+Based on guestimation numbers:
+P(AC) = 3/20
+P(RTFT) = 4/20
+P(TFT) = 5/20
+P(AD) = 8/20
+
+P(AS) = P(ROFT) = P(OFT) = P(AL) = 5/20
+
+P(Coop) = 0.25
+P(Defect) = 0.75
+
+Agent can enter cooperation state if...
+P(AC) P(AS) + 
+P(AC) P(OFT) P(Coop) +
+P(TFT) P(AS) P(Coop) +
+P(TFT) P(OFT) P(Coop) +
+= 0.10625
+For both agents, this requires a total of 0.10625 * 0.10625 =  
+
+TODO: See if this probability bares out in the simulation
+
+0.70: 1200
+0.71: 1200
+0.72: 1200
+0.73: 1300
+0.74: 1700
+0.75: 2200
+0.76: 2000
+0.77: 2000
+0.78: 2100
+0.79: 2500
+0.80: 2400
+0.81: 2700
+0.82: 2700
+0.83: 2700
+0.84: 3000
+0.85: 4800
+0.86: 4800
+0.87: 4300
+0.88: 4500
+0.89: 6000
+0.90: #
+0.91: #
+0.92: #
+0.93: ?
+0.94: ?
+0.95: #
+0.96: #
+0.97: #
+0.98: #
+0.99: #
+
+
+
+Current goals:
+1. 
+  a. Calculate avg number of episodes to cooperation for cooperative agents
+  b. Calculate avg number of episodes to defection for non-cooperative agents
+
+
+############################################
+Christmas Break
+############################################
+
+Look at the behavior of static policies with low epsilon values

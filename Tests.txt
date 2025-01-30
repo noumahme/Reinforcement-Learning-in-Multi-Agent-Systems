@@ -1,0 +1,110 @@
+BASIC PARAMETERS (0 tests)
+
+population: 20
+rounds: 1
+learning_mode: q_learning
+learning_rate: 0.05
+
+discount_rate: 0.97 (.97^2~.94) --> coop at 50.7, coop occurs about 90% of the time
+
+starting_qvalue: 60.0
+starting_state: None
+policy_mode: epsilon_greedy
+start_decay_episode: 0
+end_decay_episode: 0
+starting_temperature: 0.001
+decay_type: linear
+delta_t: 0.0
+
+disposition: 0.0
+know_fresh_agent: 1.0
+prefer_same_pool: 0.0
+prefer_different_pool: 0.0
+
+episodes: 10000 - 1000000 (always make sure epsiodes is long enough and the simulation has converged)
+reps: 20
+
+######################################################
+Closeset analogue to authors (no convergence) (several tests):
+
+starting_qvalue: 0.0
+policy_mode: boltzmann
+start_decay_episode: none
+end_decay_episode: none
+starting_temperature: (0.01 - 100.0) (Confirm that the high end is too much exploration, and the low end is too greedy) [logarithmically spaced]
+decay_type: linear
+delta_t: 0.0
+
+discount_rate: 0.97
+
+##################################################################################
+Closest analogue to authors that shows off cooperation convergence: (1 test)
+
+starting_qvalue: 0.0
+policy_mode: boltzmann
+start_decay_episode: 1000 (make sure this is late enough for the Q-value stays relatively flat)
+end_decay_episode: none
+starting_temperature: (10.0) (make sure that this is high enough)
+decay_type: exponential
+delta_t: 0.999
+
+discount_rate: 0.97
+
+##################################################################################
+Step function greedy. (1 test)
+Start exploring to raise the Q-value, then decay
+
+starting_qvalue: 0.0
+policy_mode: epsilon_greedy
+start_decay_episode: 1000 (make sure this is late enough for the Q-value to be relatively flat)
+end_decay_episode: 1001
+starting_temperature: 1.0
+decay_type: linear
+delta_t: 1.0
+
+discount_rate: 0.97
+
+###############################################################################
+Effect of starting_qvalue on cooperation: (several tests)
+
+starting_qvalue: (0.0 - 60.0) [linearly spaced]
+policy_mode: greedy
+start_decay_episode: none
+end_decay_episode: none
+starting_temperature: 0.0
+decay_type: linear
+delta_t: 0.0
+
+discount_rate: 0.97
+
+################################################################################
+Effect of discount_rate on cooperation (several tests):
+
+starting_qvalue: 60.0
+policy_mode: greedy
+start_decay_episode: none
+end_decay_episode: none
+starting_temperature: 0.0
+decay_type: linear
+delta_t: 0.0
+
+discount_rate: (0.88 - 0.999) [logarithmically spaced]
+
+###############################################################################
+Effect of constant epsilon (low) on cooperation (several tests):
+
+starting_qvalue: 60.0
+policy_mode: greedy
+start_decay_episode: none
+end_decay_episode: none
+starting_temperature: (0.0 - 0.1) [logarithmically spaced]
+decay_type: linear
+delta_t: 0.0
+
+discount_rate: 0.97
+
+###############################################################################
+Questions for Dr. Sen:
+1. How many reps should we use?
+2. Should we present data from running author's code?
+

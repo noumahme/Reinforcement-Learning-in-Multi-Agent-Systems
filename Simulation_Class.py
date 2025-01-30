@@ -841,6 +841,30 @@ def average_results(results):
                 raise ve
     return averaged_results
 
+def stdev_results(results):
+    keys = results[0].keys()
+    stdev_results = {}
+    for key in keys:
+        if isinstance(results[0][key], dict):
+            stdev_results[key] = {}
+            for subkey in results[0][key].keys():
+                try:
+                    stdev_results[key][subkey] = np.std([result[key][subkey] for result in results], axis=0)
+                except TypeError as e:
+                    stdev_results[key][subkey] = [result[key][subkey] for result in results]
+                except ValueError as ve:
+                    print(key)
+                    raise ve
+        else:
+            try:
+                stdev_results[key] = np.std([result[key] for result in results], axis=0)
+            except TypeError as e:
+                stdev_results[key] = [result[key] for result in results]
+            except ValueError as ve:
+                print(key)
+                raise ve
+    return stdev_results
+
 def run_simulations(base_params, episodes, reps, tests={}, save=True):
     if not tests:
         tests = {"learning_mode": ["q_learning"]}
@@ -872,7 +896,8 @@ def run_simulations(base_params, episodes, reps, tests={}, save=True):
                 output.append(base.run_episodes(episodes))
             param_results_reps[param_value] = {"params": params.copy() | additional_params, "output": output}
             output_avg = average_results(output)
-            param_results_avg[param_value] = {"params": params.copy() | additional_params, "output": output_avg}
+            output_stdev = stdev_results(output)
+            param_results_avg[param_value] = {"params": params.copy() | additional_params, "output": output_avg, "stdevs": output_stdev}
         if save:
             if not os.path.exists('reps'):
                 os.makedirs('reps')
@@ -921,7 +946,7 @@ def main_multi():
     #     "delta_t": [0.97, 0.99, 0.995],
     # }
 
-    all_results_reps, all_results_average = {}, {}
+    all_results_reps, all_results_average, all_results_stdev = {}, {}, {}
     for i in range(len(list(tests.values())[0])):
         params = base_params.copy()
         values = ""
@@ -936,7 +961,7 @@ def main_multi():
                 raise ValueError(f"Invalid parameter: {key}")
             values = values + f"{key}_{value[i]}_"
         single_test = {"learning_mode": ["q_learning"]}
-        results_reps, results_average = run_simulations(params, episodes, reps, single_test, save=True)
+        results_reps, results_average, results_stdev = run_simulations(params, episodes, reps, single_test, save=True)
         all_results_reps[values] = results_reps["learning_mode"]["q_learning"]
         all_results_average[values] = results_average["learning_mode"]["q_learning"]
     # with open(f'reps/reps_grouped.pkl', 'wb') as f:
@@ -951,7 +976,7 @@ def main():
     ##############################################################################################################
 
     episodes = 500000
-    reps = 1
+    reps = 2
 
     base_params = {"population": 20,   # Agent Population Size (Must be a multiple of 2)
         "rounds": 1,            # Rounds per Episode
@@ -977,7 +1002,7 @@ def main():
 
     # Can be empty to run just the base parameters
     tests = { 
-        "starting_temperature": [0.001, 0.002],
+        "starting_temperature": [0.001],
     }
     # tests = {
     #     "starting_temperature": [0.005, 0.01]
